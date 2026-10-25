@@ -1,0 +1,12 @@
+{
+  "id": "malformed.null_top_level",
+  "kind": "verify",
+  "description": "Top-level null is not a completion object.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "null",
+  "expect": {
+    "ok": false,
+    "reason": "top_level_not_object"
+  }
+}

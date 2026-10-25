@@ -1,0 +1,12 @@
+{
+  "id": "malformed.missing_choices",
+  "kind": "verify",
+  "description": "Completion without choices is rejected.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{}",
+  "expect": {
+    "ok": false,
+    "reason": "missing_choices"
+  }
+}

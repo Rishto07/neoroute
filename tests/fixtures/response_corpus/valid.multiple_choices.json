@@ -1,0 +1,12 @@
+{
+  "id": "valid.multiple_choices",
+  "kind": "verify",
+  "description": "Every choice is structurally valid.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"first\"}}, {\"message\": {\"role\": \"assistant\", \"content\": \"second\"}}]}",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}

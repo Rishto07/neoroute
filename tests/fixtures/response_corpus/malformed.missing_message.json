@@ -1,0 +1,12 @@
+{
+  "id": "malformed.missing_message",
+  "kind": "verify",
+  "description": "Each choice needs a message.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{}]}",
+  "expect": {
+    "ok": false,
+    "reason": "missing_message"
+  }
+}

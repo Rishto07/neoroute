@@ -1,0 +1,12 @@
+{
+  "id": "malformed.content_not_string",
+  "kind": "verify",
+  "description": "message.content must be a string or null.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":42}}]}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_content"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "id": "gateway.error.all_malformed_502",
+  "kind": "gateway",
+  "description": "Exhausting eligible providers on malformed 2xx returns a generic 502.",
+  "expects_json_object": false,
+  "request": {},
+  "providers": [
+    {
+      "name": "alpha"
+    },
+    {
+      "name": "beta"
+    }
+  ],
+  "max_attempts": 2,
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"NEOROUTE_M4_SECRET\":true}"
+    },
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"NEOROUTE_M4_SECRET\":true}"
+    }
+  ],
+  "expect": {
+    "outcome": "error",
+    "status_code": 502,
+    "attempts": [
+      {
+        "outcome": "failure",
+        "status_code": 200,
+        "error_category": "malformed_response",
+        "fallback_attempted": true
+      },
+      {
+        "outcome": "failure",
+        "status_code": 200,
+        "error_category": "malformed_response",
+        "fallback_attempted": false
+      }
+    ]
+  }
+}

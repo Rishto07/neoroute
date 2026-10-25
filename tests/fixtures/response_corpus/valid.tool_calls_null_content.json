@@ -1,0 +1,12 @@
+{
+  "id": "valid.tool_calls_null_content",
+  "kind": "verify",
+  "description": "Tool call with null content is accepted outside JSON mode.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": null, \"tool_calls\": [{\"id\": \"call_fixture\", \"type\": \"function\", \"function\": {\"name\": \"lookup\", \"arguments\": \"{\\\"id\\\": 1}\"}}]}}]}",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}

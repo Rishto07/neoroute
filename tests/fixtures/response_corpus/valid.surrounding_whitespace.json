@@ -1,0 +1,12 @@
+{
+  "id": "valid.surrounding_whitespace",
+  "kind": "verify",
+  "description": "Surrounding JSON whitespace is accepted.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": " \n{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"ok\"}}]}\n ",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}

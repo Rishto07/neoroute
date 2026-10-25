@@ -1,0 +1,12 @@
+{
+  "id": "valid.legacy_function_call_null_content",
+  "kind": "verify",
+  "description": "Legacy function call with null content is accepted.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": null, \"function_call\": {\"name\": \"lookup\", \"arguments\": \"{}\"}}}]}",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}

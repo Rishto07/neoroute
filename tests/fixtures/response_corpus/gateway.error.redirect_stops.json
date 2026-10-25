@@ -1,0 +1,42 @@
+{
+  "id": "gateway.error.redirect_stops",
+  "kind": "gateway",
+  "description": "A 3xx response yields invalid_response and stops fallback.",
+  "expects_json_object": false,
+  "request": {},
+  "providers": [
+    {
+      "name": "alpha"
+    },
+    {
+      "name": "beta"
+    }
+  ],
+  "max_attempts": 2,
+  "responses": [
+    {
+      "status": 302,
+      "content_type": "text/html",
+      "body_encoding": "utf-8",
+      "body": ""
+    },
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"id\":\"chatcmpl-fixture\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"fixture-model\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"ok\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1,\"total_tokens\":2}}"
+    }
+  ],
+  "expect": {
+    "outcome": "error",
+    "status_code": 302,
+    "attempts": [
+      {
+        "outcome": "failure",
+        "status_code": 302,
+        "error_category": "invalid_response",
+        "fallback_attempted": false
+      }
+    ]
+  }
+}

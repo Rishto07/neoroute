@@ -1,0 +1,12 @@
+{
+  "id": "valid.full_metadata",
+  "kind": "verify",
+  "description": "Full completion metadata is accepted and optional fields are not type-checked.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"id\":\"chatcmpl-fixture\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"fixture-model\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"ok\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1,\"total_tokens\":2}}",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}

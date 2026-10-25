@@ -1,0 +1,12 @@
+{
+  "id": "malformed.choice_not_object",
+  "kind": "verify",
+  "description": "Each choice must be an object.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[\"nope\"]}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_choice"
+  }
+}
