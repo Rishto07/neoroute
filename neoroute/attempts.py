@@ -28,6 +28,8 @@ class ErrorCategory(StrEnum):
     CONNECTION_ERROR = "connection_error"            # connection or transport failure
     MISSING_API_KEY = "missing_api_key"              # local configuration problem; provider skipped
     INVALID_RESPONSE = "invalid_response"            # non-2xx that yields no usable completion (e.g. 3xx)
+    MALFORMED_RESPONSE = "malformed_response"        # 2xx that violates the response contract
+    INVALID_JSON_CONTENT = "invalid_json_content"    # json_object content is not parseable JSON
     UNKNOWN = "unknown"                              # unclassified failure
 
 
