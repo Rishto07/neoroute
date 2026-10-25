@@ -1,0 +1,12 @@
+{
+  "id": "malformed.non_finite_number",
+  "kind": "verify",
+  "description": "NaN is not RFC 8259 JSON.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"ok\"}}],\"value\":NaN}",
+  "expect": {
+    "ok": false,
+    "reason": "body_not_json"
+  }
+}

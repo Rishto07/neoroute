@@ -1,0 +1,12 @@
+{
+  "id": "malformed.invalid_role",
+  "kind": "verify",
+  "description": "message.role must be a non-empty string.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":{\"content\":\"ok\"}}]}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_role"
+  }
+}

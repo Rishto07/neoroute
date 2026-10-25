@@ -1,0 +1,12 @@
+{
+  "id": "json_mode.non_null_valid_with_tool_calls",
+  "kind": "verify",
+  "description": "Parseable content with tool calls is accepted in JSON mode.",
+  "expects_json_object": true,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"{\\\"note\\\":\\\"ok\\\"}\", \"tool_calls\": [{\"id\": \"call_fixture\", \"type\": \"function\", \"function\": {\"name\": \"lookup\", \"arguments\": \"{\\\"id\\\": 1}\"}}]}}]}",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}

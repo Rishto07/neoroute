@@ -1,0 +1,12 @@
+{
+  "id": "valid.minimal",
+  "kind": "verify",
+  "description": "Minimal structurally valid completion.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":\"ok\"}}]}",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}

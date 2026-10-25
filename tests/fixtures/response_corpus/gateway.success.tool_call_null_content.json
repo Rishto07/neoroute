@@ -1,0 +1,42 @@
+{
+  "id": "gateway.success.tool_call_null_content",
+  "kind": "gateway",
+  "description": "A valid tool-call response with null content is accepted.",
+  "expects_json_object": false,
+  "request": {
+    "tools": true
+  },
+  "providers": [
+    {
+      "name": "alpha",
+      "capabilities": {
+        "tools": "supported"
+      }
+    }
+  ],
+  "max_attempts": 1,
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": null, \"tool_calls\": [{\"id\": \"call_fixture\", \"type\": \"function\", \"function\": {\"name\": \"lookup\", \"arguments\": \"{\\\"id\\\": 1}\"}}]}}]}"
+    }
+  ],
+  "expect": {
+    "outcome": "success",
+    "status_code": 200,
+    "attempts": [
+      {
+        "outcome": "success",
+        "status_code": 200,
+        "error_category": null,
+        "fallback_attempted": false
+      }
+    ],
+    "provider_index": 0,
+    "content_type": "application/json",
+    "body_encoding": "utf-8",
+    "body": "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": null, \"tool_calls\": [{\"id\": \"call_fixture\", \"type\": \"function\", \"function\": {\"name\": \"lookup\", \"arguments\": \"{\\\"id\\\": 1}\"}}]}}]}"
+  }
+}

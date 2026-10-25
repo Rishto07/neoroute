@@ -1,0 +1,12 @@
+{
+  "id": "malformed.invalid_tool_calls",
+  "kind": "verify",
+  "description": "tool_calls must be an array of objects.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":null,\"tool_calls\":\"nope\"}}]}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_tool_calls"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "malformed.missing_content",
+  "kind": "verify",
+  "description": "message.content is required even when null.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":{\"role\":\"assistant\"}}]}",
+  "expect": {
+    "ok": false,
+    "reason": "missing_content"
+  }
+}

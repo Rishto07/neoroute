@@ -1,0 +1,12 @@
+{
+  "id": "malformed.message_not_object",
+  "kind": "verify",
+  "description": "message must be an object.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":\"nope\"}]}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_message"
+  }
+}

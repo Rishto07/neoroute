@@ -1,0 +1,12 @@
+{
+  "id": "json_mode.unparseable_string",
+  "kind": "verify",
+  "description": "Non-JSON content is rejected in JSON mode.",
+  "expects_json_object": true,
+  "body_encoding": "utf-8",
+  "body": "{\"id\":\"chatcmpl-fixture\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"fixture-model\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"not json\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1,\"total_tokens\":2}}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_json_content"
+  }
+}

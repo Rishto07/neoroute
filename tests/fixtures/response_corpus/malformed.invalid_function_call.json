@@ -1,0 +1,12 @@
+{
+  "id": "malformed.invalid_function_call",
+  "kind": "verify",
+  "description": "function_call must carry a name and string arguments.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[{\"message\":{\"role\":\"assistant\",\"content\":null,\"function_call\":{}}}]}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_function_call"
+  }
+}

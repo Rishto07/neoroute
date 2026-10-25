@@ -1,0 +1,48 @@
+{
+  "id": "gateway.error.malformed_then_400_stop",
+  "kind": "gateway",
+  "description": "A malformed 200 followed by a non-retryable 400 stops fallback.",
+  "expects_json_object": false,
+  "request": {},
+  "providers": [
+    {
+      "name": "alpha"
+    },
+    {
+      "name": "beta"
+    }
+  ],
+  "max_attempts": 2,
+  "responses": [
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"unexpected\":true}"
+    },
+    {
+      "status": 400,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"NEOROUTE_M4_SECRET\":\"bad request\"}"
+    }
+  ],
+  "expect": {
+    "outcome": "error",
+    "status_code": 400,
+    "attempts": [
+      {
+        "outcome": "failure",
+        "status_code": 200,
+        "error_category": "malformed_response",
+        "fallback_attempted": true
+      },
+      {
+        "outcome": "failure",
+        "status_code": 400,
+        "error_category": "provider_client_error",
+        "fallback_attempted": false
+      }
+    ]
+  }
+}

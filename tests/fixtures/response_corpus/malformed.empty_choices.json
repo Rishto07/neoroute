@@ -1,0 +1,12 @@
+{
+  "id": "malformed.empty_choices",
+  "kind": "verify",
+  "description": "choices must not be empty.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\":[]}",
+  "expect": {
+    "ok": false,
+    "reason": "empty_choices"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "id": "gateway.error.client_error_stops",
+  "kind": "gateway",
+  "description": "A non-retryable 400 stops without consuming the next provider.",
+  "expects_json_object": false,
+  "request": {},
+  "providers": [
+    {
+      "name": "alpha"
+    },
+    {
+      "name": "beta"
+    }
+  ],
+  "max_attempts": 2,
+  "responses": [
+    {
+      "status": 400,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"error\":\"bad request\"}"
+    },
+    {
+      "status": 200,
+      "content_type": "application/json",
+      "body_encoding": "utf-8",
+      "body": "{\"id\":\"chatcmpl-fixture\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"fixture-model\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"ok\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1,\"total_tokens\":2}}"
+    }
+  ],
+  "expect": {
+    "outcome": "error",
+    "status_code": 400,
+    "attempts": [
+      {
+        "outcome": "failure",
+        "status_code": 400,
+        "error_category": "provider_client_error",
+        "fallback_attempted": false
+      }
+    ]
+  }
+}

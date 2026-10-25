@@ -1,0 +1,12 @@
+{
+  "id": "malformed.top_level_array",
+  "kind": "verify",
+  "description": "Top-level array is not a completion object.",
+  "expects_json_object": false,
+  "body_encoding": "utf-8",
+  "body": "[]",
+  "expect": {
+    "ok": false,
+    "reason": "top_level_not_object"
+  }
+}

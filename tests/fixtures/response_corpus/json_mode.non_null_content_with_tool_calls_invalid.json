@@ -1,0 +1,12 @@
+{
+  "id": "json_mode.non_null_content_with_tool_calls_invalid",
+  "kind": "verify",
+  "description": "Non-null content is still validated alongside tool calls.",
+  "expects_json_object": true,
+  "body_encoding": "utf-8",
+  "body": "{\"choices\": [{\"message\": {\"role\": \"assistant\", \"content\": \"not json\", \"tool_calls\": [{\"id\": \"call_fixture\", \"type\": \"function\", \"function\": {\"name\": \"lookup\", \"arguments\": \"{\\\"id\\\": 1}\"}}]}}]}",
+  "expect": {
+    "ok": false,
+    "reason": "invalid_json_content"
+  }
+}

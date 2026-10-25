@@ -1,0 +1,12 @@
+{
+  "id": "malformed.non_utf8",
+  "kind": "verify",
+  "description": "A non-UTF-8 body is not valid JSON text.",
+  "expects_json_object": false,
+  "body_encoding": "base64",
+  "body": "eyJjaG9pY2VzIjpbeyJtZXNzYWdlIjp7InJvbGUiOiJhc3Npc3RhbnQiLCJjb250ZW50Ijoi/yJ9fV19",
+  "expect": {
+    "ok": false,
+    "reason": "body_not_json"
+  }
+}

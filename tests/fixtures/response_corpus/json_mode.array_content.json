@@ -1,0 +1,12 @@
+{
+  "id": "json_mode.array_content",
+  "kind": "verify",
+  "description": "Parseable array content is accepted in JSON mode.",
+  "expects_json_object": true,
+  "body_encoding": "utf-8",
+  "body": "{\"id\":\"chatcmpl-fixture\",\"object\":\"chat.completion\",\"created\":1700000000,\"model\":\"fixture-model\",\"choices\":[{\"index\":0,\"message\":{\"role\":\"assistant\",\"content\":\"[1,2]\"},\"finish_reason\":\"stop\"}],\"usage\":{\"prompt_tokens\":1,\"completion_tokens\":1,\"total_tokens\":2}}",
+  "expect": {
+    "ok": true,
+    "reason": null
+  }
+}
