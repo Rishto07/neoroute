@@ -18,6 +18,11 @@ from neoroute.attempts import (
 )
 from neoroute.capabilities import analyze_request_shape
 from neoroute.config import ProviderConfig, Settings
+from neoroute.response_contract import (
+    ResponseFailureReason,
+    check_response,
+    expects_json_object,
+)
 from neoroute.routing import build_plan
 from neoroute.schemas import ChatCompletionRequest
 
@@ -36,6 +41,12 @@ class UpstreamResult:
 def _eligible_for_fallback(status_code: int) -> bool:
     # Ordinary 4xx errors are not retried. 429 and 5xx can be transient.
     return status_code == 429 or status_code >= 500
+
+
+def _response_error_category(reason: ResponseFailureReason) -> ErrorCategory:
+    if reason is ResponseFailureReason.INVALID_JSON_CONTENT:
+        return ErrorCategory.INVALID_JSON_CONTENT
+    return ErrorCategory.MALFORMED_RESPONSE
 
 
 def _record_attempt(
@@ -103,6 +114,7 @@ async def forward_chat(
                 "required": sorted(capability.value for capability in requirements.required),
             },
         )
+    json_mode = expects_json_object(payload)
     owned_client = client is None
     http_client = client or httpx.AsyncClient(timeout=settings.timeout_seconds)
     started = time.perf_counter()
@@ -141,6 +153,21 @@ async def forward_chat(
                 )
                 continue
             if response.is_success:
+                validation = check_response(
+                    response.content,
+                    expects_json_object=json_mode,
+                )
+                if validation.reason is not None:
+                    reason = validation.reason
+                    errors.append({"provider": provider.name, "error": reason.value})
+                    _record_attempt(
+                        records, trace_id, provider, attempt, attempt_started, attempt_wall,
+                        Outcome.FAILURE,
+                        error_category=_response_error_category(reason),
+                        status_code=response.status_code,
+                        fallback_attempted=has_next,
+                    )
+                    continue
                 elapsed = time.perf_counter() - started
                 _record_attempt(
                     records, trace_id, provider, attempt, attempt_started, attempt_wall,

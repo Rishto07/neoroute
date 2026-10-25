@@ -1,6 +1,6 @@
 ﻿# Neoroute - self-healing AI gateway MVP
 
-A small, auditable starting point for an OpenAI-compatible gateway. It forwards `/v1/chat/completions` requests to configured OpenAI-compatible upstreams and falls back when an upstream is unavailable, rate-limited, or returns a server error.
+A small, auditable starting point for an OpenAI-compatible gateway. It forwards `/v1/chat/completions` requests to configured OpenAI-compatible upstreams and falls back when an upstream is unavailable, rate-limited, returns a server error, or returns a malformed successful response.
 
 ## Quick start (Windows PowerShell)
 
@@ -41,7 +41,7 @@ Use `model: "auto"` for configured order or a configured provider name to prefer
 
 ## Capability routing
 
-A provider may declare what its configured model supports. Capabilities are `vision`, `tools`, `json_mode`, `json_schema`, `audio_input`, and `audio_output`; each value is `supported`, `unsupported`, or `unknown`. Omitting a capability is the same as `unknown`.
+A provider may declare what its configured model supports. Capabilities are `vision`, `tools`, `json_mode`, `json_schema`, `audio_input`, and `audio_output`; each value is `supported`, `unsupported`, or `unknown`. Omitting a capability is the same as `unknown`. Declarations are operator-configured; Neoroute does not discover model capabilities automatically.
 
 ```json
 {
@@ -69,6 +69,16 @@ Malformed or unrecognized request shapes fail closed. Neoroute recognizes `text`
 Unknown metadata is fail-closed: if a request requires a capability and a provider does not explicitly declare it as `supported`, that provider is excluded. If no configured provider is eligible, Neoroute returns `422` with the required capability list before making any upstream call. Text-only requests have no capability requirements, so existing routing behavior is unchanged.
 
 Configuration JSON must not contain duplicate object keys, including inside `capabilities`; duplicate keys are a configuration error rather than last-key-wins.
+
+## Response verification
+
+For non-streaming requests, every successful (`2xx`) upstream response is structurally validated before it is returned. The check requires a top-level JSON object, a non-empty `choices` array, a `message` object for each choice, a non-empty string `role`, and `content` as a string or `null`. Tool calls and legacy function calls are checked for their required structure when present. Optional metadata such as `usage`, `finish_reason`, `id`, and provider-specific fields is preserved and is not type-checked.
+
+When the request uses `response_format: {"type": "json_object"}`, every choice's assistant content must be parseable JSON. JSON is not repaired or coerced. Tool-call and refusal outcomes with `null` content are accepted without a JSON-content check; non-null content is still validated. `json_schema` requests receive structural validation only; JSON Schema conformance is not enforced. Passing these checks establishes structural validity, not semantic correctness or output quality.
+
+A malformed `2xx` response is recorded as a failed attempt with its original status and a fixed failure category (`malformed_response` or `invalid_json_content`), then routing continues to the next eligible provider within the existing plan and `NEOROUTE_MAX_ATTEMPTS` limit. If every eligible provider returns a malformed successful response, the gateway returns its generic `502` error. Diagnostics list provider names and fixed reason codes; they never include upstream response bodies, prompts, completions, or credentials.
+
+When a response passes validation, Neoroute forwards the original upstream body bytes, HTTP status, and `Content-Type` unchanged. Streaming remains unsupported: `stream=true` returns `501`.
 
 ## Tests
 
