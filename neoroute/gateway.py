@@ -1,12 +1,22 @@
 ﻿from __future__ import annotations
+
 import logging
 import time
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime
+
 import httpx
 from fastapi import HTTPException, Response
-from neoroute.attempts import AttemptRecord, ErrorCategory, Outcome, classify_exception, classify_status
+
+from neoroute.attempts import (
+    AttemptRecord,
+    ErrorCategory,
+    Outcome,
+    classify_exception,
+    classify_status,
+)
+from neoroute.capabilities import analyze_request_shape
 from neoroute.config import ProviderConfig, Settings
 from neoroute.routing import build_plan
 from neoroute.schemas import ChatCompletionRequest
@@ -69,6 +79,30 @@ async def forward_chat(
 ):
     if payload.stream:
         raise HTTPException(status_code=501, detail="Streaming is not implemented yet; send stream=false in this MVP.")
+    shape = analyze_request_shape(payload)
+    if shape.error is not None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "Unsupported or malformed request shape",
+                "reason": shape.error.value,
+            },
+        )
+    requirements = shape.requirements
+    plan = build_plan(
+        settings.providers,
+        payload.model,
+        settings.max_attempts,
+        requirements=requirements,
+    )
+    if requirements and not plan.providers:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "message": "No configured provider satisfies the required capabilities",
+                "required": sorted(capability.value for capability in requirements.required),
+            },
+        )
     owned_client = client is None
     http_client = client or httpx.AsyncClient(timeout=settings.timeout_seconds)
     started = time.perf_counter()
@@ -76,7 +110,6 @@ async def forward_chat(
     records: list[AttemptRecord] = attempt_log if attempt_log is not None else []
     errors: list[dict[str, str | int]] = []
     try:
-        plan = build_plan(settings.providers, payload.model, settings.max_attempts)
         for attempt, provider in enumerate(plan.providers, start=1):
             attempt_started = time.perf_counter()
             attempt_wall = datetime.now(UTC)

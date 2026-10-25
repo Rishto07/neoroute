@@ -39,6 +39,37 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/v1/chat/completions -C
 
 Use `model: "auto"` for configured order or a configured provider name to prefer that provider. Response headers include `X-Neoroute-Provider`, `X-Neoroute-Attempts`, and `X-Neoroute-Latency-Ms`.
 
+## Capability routing
+
+A provider may declare what its configured model supports. Capabilities are `vision`, `tools`, `json_mode`, `json_schema`, `audio_input`, and `audio_output`; each value is `supported`, `unsupported`, or `unknown`. Omitting a capability is the same as `unknown`.
+
+```json
+{
+  "name": "primary",
+  "base_url": "https://api.openai.com/v1",
+  "api_key_env": "OPENAI_API_KEY",
+  "model": "gpt-4o-mini",
+  "capabilities": {
+    "vision": "supported",
+    "tools": "supported",
+    "json_mode": "supported",
+    "json_schema": "supported",
+    "audio_input": "unsupported",
+    "audio_output": "unsupported"
+  }
+}
+```
+
+Neoroute derives requirements from image/audio content parts, non-empty `tools`, legacy `functions` and `function_call`, tool-role or tool-call messages, `response_format` (`json_object` versus `json_schema`), and `modalities` containing `audio`. `tool_choice` is validated but does not require `tools` unless tools are actually supplied. Providers are filtered before named-provider preference and attempt truncation.
+
+Legacy `function_call` follows OpenAI semantics: `"none"` and `""` do not require `tools`, `"auto"` requires `tools` only when non-empty `functions` are supplied, and an assistant `function_call` object requires `tools`.
+
+Malformed or unrecognized request shapes fail closed. Neoroute recognizes `text`/`input_text`, image, and audio content parts; `json_object`, `json_schema`, and `text` response formats; and list-shaped `tools`, `functions`, and `modalities`. An unknown content-part type, a media part with no `type`, an unknown response-format type, malformed `tools`/`functions`/`modalities`, an invalid `function_call`, or another unsupported shape is rejected with `422` and a fixed reason code before any upstream call. It is never routed as text-only.
+
+Unknown metadata is fail-closed: if a request requires a capability and a provider does not explicitly declare it as `supported`, that provider is excluded. If no configured provider is eligible, Neoroute returns `422` with the required capability list before making any upstream call. Text-only requests have no capability requirements, so existing routing behavior is unchanged.
+
+Configuration JSON must not contain duplicate object keys, including inside `capabilities`; duplicate keys are a configuration error rather than last-key-wins.
+
 ## Tests
 
 ```powershell
@@ -53,11 +84,10 @@ pytest -q
 
 ## Next milestones
 
-1. Add structured routing decisions and safe error classification.
-2. Add a provider capability registry.
-3. Persist traces, latency, cost, and outcomes.
-4. Implement proper streaming passthrough and explicit retry boundaries.
-5. Add task-aware routing and a reproducible benchmark suite.
+1. Persist traces, latency, cost, and outcomes.
+2. Implement proper streaming passthrough and explicit retry boundaries.
+3. Add task-aware routing and a reproducible benchmark suite.
+4. Add broader protocol translation and provider discovery.
 
 ## Environment variables
 
@@ -65,7 +95,7 @@ All configuration is read from environment variables (or `.env`, loaded at start
 
 | Name | Purpose | Safe value |
 | --- | --- | --- |
-| `NEOROUTE_PROVIDERS` | JSON array of provider objects, each with `name`, `base_url`, `api_key_env`, `model` | the JSON shown in `.env.example` |
+| `NEOROUTE_PROVIDERS` | JSON array of provider objects, each with `name`, `base_url`, `api_key_env`, `model`, and optional `capabilities` | the JSON shown in `.env.example` |
 | `NEOROUTE_TIMEOUT_SECONDS` | Per-provider request timeout in seconds | `45` |
 | `NEOROUTE_MAX_ATTEMPTS` | Maximum provider attempts per request | `3` |
 | `OPENAI_API_KEY`, `GROQ_API_KEY` | Key *names* are whatever `api_key_env` references; values are read from the environment at request time | `replace-me` |
