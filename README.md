@@ -19,7 +19,7 @@ OPENAI_API_KEY=replace-me
 GROQ_API_KEY=replace-me
 ```
 
-Never commit real API keys. Provider names and model names are examples; verify availability and terms with each provider.
+Never commit real API keys. `.env` is git-ignored and must never be committed, pushed, or pasted into issues, pull requests, or logs — only `.env.example` (placeholders such as `replace-me`) is tracked. Provider names and model names are examples; verify availability and terms with each provider.
 
 Run the server:
 
@@ -58,4 +58,25 @@ pytest -q
 3. Persist traces, latency, cost, and outcomes.
 4. Implement proper streaming passthrough and explicit retry boundaries.
 5. Add task-aware routing and a reproducible benchmark suite.
+
+## Environment variables
+
+All configuration is read from environment variables (or `.env`, loaded at startup). Variable names and safe placeholder usage:
+
+| Name | Purpose | Safe value |
+| --- | --- | --- |
+| `NEOROUTE_PROVIDERS` | JSON array of provider objects, each with `name`, `base_url`, `api_key_env`, `model` | the JSON shown in `.env.example` |
+| `NEOROUTE_TIMEOUT_SECONDS` | Per-provider request timeout in seconds | `45` |
+| `NEOROUTE_MAX_ATTEMPTS` | Maximum provider attempts per request | `3` |
+| `OPENAI_API_KEY`, `GROQ_API_KEY` | Key *names* are whatever `api_key_env` references; values are read from the environment at request time | `replace-me` |
+
+Copy `.env.example` to `.env` and replace the placeholders with real values locally. `.env` must never be committed; do not paste real keys into source files, tests, CI configuration, or commits.
+
+## Repository hygiene
+
+Ignored paths: `.env` and `.env.*` (except `.env.example`), `.venv/`, `__pycache__/`, `.pytest_cache/`, `*.py[cod]`, `*.egg-info/`, `build/`, `dist/`, coverage output (`.coverage`, `coverage.xml`, `htmlcov/`), and `_research/` (external repositories cloned for research purposes).
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs `pip install -e ".[dev]"` followed by `pytest -q` on Python 3.11–3.14 for every push and pull request. The workflow needs no secrets.
 
