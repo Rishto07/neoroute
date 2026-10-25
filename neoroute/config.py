@@ -32,12 +32,12 @@ def _load_providers(raw: str) -> tuple[ProviderConfig, ...]:
         parsed = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise ValueError(
-            "GHOSTROUTE_PROVIDERS must be a valid JSON array"
+            "NEOROUTE_PROVIDERS must be a valid JSON array"
         ) from exc
 
     if not isinstance(parsed, list) or not parsed:
         raise ValueError(
-            "GHOSTROUTE_PROVIDERS must be a non-empty JSON array"
+            "NEOROUTE_PROVIDERS must be a non-empty JSON array"
         )
 
     providers: list[ProviderConfig] = []
@@ -87,19 +87,19 @@ def _load_providers(raw: str) -> tuple[ProviderConfig, ...]:
 
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
-    raw = os.getenv("GHOSTROUTE_PROVIDERS", "")
+    raw = os.getenv("NEOROUTE_PROVIDERS", "")
 
     if not raw:
         raise ValueError(
-            "Set GHOSTROUTE_PROVIDERS in your environment or .env file"
+            "Set NEOROUTE_PROVIDERS in your environment or .env file"
         )
 
     return Settings(
         providers=_load_providers(raw),
         timeout_seconds=float(
-            os.getenv("GHOSTROUTE_TIMEOUT_SECONDS", "45")
+            os.getenv("NEOROUTE_TIMEOUT_SECONDS", "45")
         ),
         max_attempts=max(
-            1, int(os.getenv("GHOSTROUTE_MAX_ATTEMPTS", "3"))
+            1, int(os.getenv("NEOROUTE_MAX_ATTEMPTS", "3"))
         ),
     )
