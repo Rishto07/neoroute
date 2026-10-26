@@ -1,6 +1,10 @@
 const state = {
   report: null,
   selectedCaseId: null,
+  activeTab: "overview",
+  search: "",
+  kindFilter: "all",
+  statusFilter: "all",
 };
 
 const elements = {
@@ -20,13 +24,32 @@ const elements = {
   fallbackSuccesses: document.getElementById("fallbackSuccesses"),
   baselineDetail: document.getElementById("baselineDetail"),
   baselineChanges: document.getElementById("baselineChanges"),
+  categoryDeltas: document.getElementById("categoryDeltas"),
+  runDetails: document.getElementById("runDetails"),
+  coverageContent: document.getElementById("coverageContent"),
+  caseSearch: document.getElementById("caseSearch"),
+  kindFilter: document.getElementById("kindFilter"),
+  statusFilter: document.getElementById("statusFilter"),
   resultsBody: document.getElementById("resultsBody"),
   selectedCaseLabel: document.getElementById("selectedCaseLabel"),
   changedFields: document.getElementById("changedFields"),
   failureList: document.getElementById("failureList"),
   expectedJson: document.getElementById("expectedJson"),
   actualJson: document.getElementById("actualJson"),
-  coverageContent: document.getElementById("coverageContent"),
+  signatureChanges: document.getElementById("signatureChanges"),
+  newlyFailing: document.getElementById("newlyFailing"),
+  newlyPassing: document.getElementById("newlyPassing"),
+  driftChanges: document.getElementById("driftChanges"),
+  gwSuccess: document.getElementById("gwSuccess"),
+  gwError: document.getElementById("gwError"),
+  gwFallback: document.getElementById("gwFallback"),
+  gwImmediate: document.getElementById("gwImmediate"),
+  gwAttempts: document.getElementById("gwAttempts"),
+  gwFallbackAttempted: document.getElementById("gwFallbackAttempted"),
+  gatewayCaseLabel: document.getElementById("gatewayCaseLabel"),
+  attemptBody: document.getElementById("attemptBody"),
+  tabs: [...document.querySelectorAll(".tab")],
+  panels: [...document.querySelectorAll(".tab-panel")],
 };
 
 function setBanner(message, type = "info") {
@@ -44,8 +67,23 @@ function showState(name) {
   elements.dashboard.classList.toggle("hidden", name !== "dashboard");
 }
 
+function activateTab(tabName) {
+  state.activeTab = tabName;
+  for (const tab of elements.tabs) {
+    const active = tab.dataset.tab === tabName;
+    tab.classList.toggle("active", active);
+    tab.setAttribute("aria-selected", active ? "true" : "false");
+  }
+  for (const panel of elements.panels) {
+    const active = panel.id === `panel-${tabName}`;
+    panel.classList.toggle("hidden", !active);
+    panel.setAttribute("aria-hidden", active ? "false" : "true");
+  }
+}
+
 function outcomeText(caseItem, side) {
   const data = caseItem[side];
+  if (!data) return "unknown";
   if (caseItem.kind === "verify") {
     if (typeof data.ok === "boolean") {
       return data.ok ? "valid" : (data.reason || "invalid");
@@ -129,6 +167,7 @@ function renderBaseline(baseline) {
     ["Kind changes", baseline.kind_changes],
     ["Newly failing", baseline.newly_failing],
     ["Newly passing", baseline.newly_passing],
+    ["Signature changes", baseline.signature_changes],
   ];
   let hasChanges = false;
   for (const [label, values] of changes) {
@@ -145,14 +184,63 @@ function renderBaseline(baseline) {
     chip.textContent = "No baseline regressions detected";
     container.appendChild(chip);
   }
+
+  const deltaContainer = elements.categoryDeltas;
+  deltaContainer.replaceChildren();
+  const deltas = baseline.category_deltas || {};
+  for (const [group, values] of Object.entries(deltas)) {
+    for (const [key, value] of Object.entries(values || {})) {
+      const chip = document.createElement("span");
+      chip.className = value > 0 ? "chip bad" : "chip good";
+      chip.textContent = `${group}: ${key} ${value > 0 ? "+" : ""}${value}`;
+      deltaContainer.appendChild(chip);
+    }
+  }
+}
+
+function renderRunDetails(report) {
+  const container = elements.runDetails;
+  container.replaceChildren();
+  const details = [
+    ["Schema version", report.schema_version],
+    ["Runner", `${report.runner?.name || "unknown"} v${report.runner?.version ?? "?"}`],
+    ["Corpus cases", report.corpus?.case_count],
+    ["Verify cases", report.corpus?.verify_count],
+    ["Gateway cases", report.corpus?.gateway_count],
+    ["Fingerprint", report.corpus?.fingerprint],
+    ["Result", report.result?.ok ? "PASS" : "FAIL"],
+    ["Exit code", report.result?.exit_code],
+  ];
+  for (const [key, value] of details) {
+    const dt = document.createElement("dt");
+    dt.textContent = key;
+    const dd = document.createElement("dd");
+    dd.textContent = value ?? "n/a";
+    container.appendChild(dt);
+    container.appendChild(dd);
+  }
+}
+
+function filteredCases() {
+  if (!state.report?.cases) return [];
+  const search = state.search.trim().toLowerCase();
+  return state.report.cases.filter((item) => {
+    if (state.kindFilter !== "all" && item.kind !== state.kindFilter) return false;
+    if (state.statusFilter === "pass" && !item.passed) return false;
+    if (state.statusFilter === "fail" && item.passed) return false;
+    if (!search) return true;
+    const haystack = `${item.id} ${item.kind} ${item.passed ? "pass" : "fail"} ${item.failures?.join(" ") || ""}`.toLowerCase();
+    return haystack.includes(search);
+  });
 }
 
 function renderResults(report) {
   const body = elements.resultsBody;
   body.replaceChildren();
-  for (const caseItem of report.cases || []) {
+  for (const caseItem of filteredCases()) {
     const row = document.createElement("tr");
     row.dataset.caseId = caseItem.id;
+    row.tabIndex = 0;
     if (caseItem.id === state.selectedCaseId) row.classList.add("selected");
 
     const statusClass = caseItem.passed ? "status-pass" : "status-fail";
@@ -170,7 +258,14 @@ function renderResults(report) {
       cell.textContent = value;
       row.appendChild(cell);
     });
-    row.addEventListener("click", () => selectCase(caseItem.id));
+    const select = () => selectCase(caseItem.id);
+    row.addEventListener("click", select);
+    row.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        select();
+      }
+    });
     body.appendChild(row);
   }
 }
@@ -216,6 +311,88 @@ function selectCase(caseId) {
   for (const row of elements.resultsBody.querySelectorAll("tr")) {
     row.classList.toggle("selected", row.dataset.caseId === caseId);
   }
+
+  if (caseItem.kind === "gateway" && state.activeTab !== "gateway") {
+    // keep gateway panel available; user can switch
+  }
+  renderGatewayAttempts(caseItem);
+}
+
+function renderGatewayAttempts(caseItem) {
+  const body = elements.attemptBody;
+  body.replaceChildren();
+  if (!caseItem || caseItem.kind !== "gateway") {
+    elements.gatewayCaseLabel.textContent = "Select a gateway case from Test cases.";
+    return;
+  }
+  elements.gatewayCaseLabel.textContent = `${caseItem.id} (${caseItem.actual?.outcome || "unknown"})`;
+  const attempts = caseItem.actual?.attempts || [];
+  if (attempts.length === 0) {
+    const row = document.createElement("tr");
+    const cell = document.createElement("td");
+    cell.colSpan = 6;
+    cell.textContent = "No attempts recorded.";
+    row.appendChild(cell);
+    body.appendChild(row);
+    return;
+  }
+  for (const attempt of attempts) {
+    const row = document.createElement("tr");
+    const values = [
+      attempt.attempt,
+      attempt.provider,
+      attempt.outcome,
+      attempt.status_code ?? "-",
+      attempt.error_category ?? "-",
+      attempt.fallback_attempted ? "yes" : "no",
+    ];
+    values.forEach((value) => {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.appendChild(cell);
+    });
+    body.appendChild(row);
+  }
+}
+
+function renderSignatureChanges(baseline) {
+  const container = elements.signatureChanges;
+  container.replaceChildren();
+  const details = baseline.signature_details || [];
+  if (details.length === 0) {
+    const item = document.createElement("li");
+    item.textContent = "No signature changes detected.";
+    container.appendChild(item);
+    return;
+  }
+  for (const detail of details) {
+    const item = document.createElement("li");
+    const fields = (detail.changed_fields || []).join(", ") || "fields";
+    item.textContent = `${detail.id}: ${fields}`;
+    const sub = document.createElement("div");
+    sub.style.fontSize = "0.78rem";
+    sub.style.color = "var(--muted)";
+    sub.textContent = `expected ${JSON.stringify(detail.expected)} -> actual ${JSON.stringify(detail.actual)}`;
+    item.appendChild(sub);
+    container.appendChild(item);
+  }
+}
+
+function renderChipList(container, values, emptyText) {
+  container.replaceChildren();
+  if (!values || values.length === 0) {
+    const chip = document.createElement("span");
+    chip.className = "chip good";
+    chip.textContent = emptyText;
+    container.appendChild(chip);
+    return;
+  }
+  for (const value of values) {
+    const chip = document.createElement("span");
+    chip.className = "chip bad";
+    chip.textContent = value;
+    container.appendChild(chip);
+  }
 }
 
 function renderReport(report) {
@@ -233,6 +410,25 @@ function renderReport(report) {
   renderBaseline(report.baseline || {});
   renderCoverage(report.coverage || {});
   renderResults(report);
+  renderRunDetails(report);
+  renderSignatureChanges(report.baseline || {});
+
+  renderChipList(elements.newlyFailing, report.baseline?.newly_failing, "No newly failing cases");
+  renderChipList(elements.newlyPassing, report.baseline?.newly_passing, "No newly passing cases");
+
+  const drift = [
+    ...(report.baseline?.new_cases || []).map((id) => `new: ${id}`),
+    ...(report.baseline?.removed_cases || []).map((id) => `removed: ${id}`),
+    ...(report.baseline?.kind_changes || []).map((id) => `kind changed: ${id}`),
+  ];
+  renderChipList(elements.driftChanges, drift, "No baseline drift");
+
+  elements.gwSuccess.textContent = gateway.terminal_results?.success ?? 0;
+  elements.gwError.textContent = gateway.terminal_results?.error ?? 0;
+  elements.gwFallback.textContent = gateway.fallback_success ?? 0;
+  elements.gwImmediate.textContent = gateway.immediate_success ?? 0;
+  elements.gwAttempts.textContent = gateway.attempts?.total ?? 0;
+  elements.gwFallbackAttempted.textContent = gateway.attempts ? (gateway.fallback_attempted?.true ?? 0) : 0;
 
   if (state.selectedCaseId) selectCase(state.selectedCaseId);
 
@@ -282,6 +478,27 @@ async function loadReport() {
 
 elements.runButton.addEventListener("click", runEvaluation);
 elements.loadButton.addEventListener("click", loadReport);
+elements.caseSearch.addEventListener("input", (event) => {
+  state.search = event.target.value;
+  renderResults(state.report);
+});
+elements.kindFilter.addEventListener("change", (event) => {
+  state.kindFilter = event.target.value;
+  renderResults(state.report);
+});
+elements.statusFilter.addEventListener("change", (event) => {
+  state.statusFilter = event.target.value;
+  renderResults(state.report);
+});
+for (const tab of elements.tabs) {
+  tab.addEventListener("click", () => activateTab(tab.dataset.tab));
+  tab.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      activateTab(tab.dataset.tab);
+    }
+  });
+}
 
 showState("empty");
 setBanner("Ready. Run the evaluation or load a saved report.", "info");
