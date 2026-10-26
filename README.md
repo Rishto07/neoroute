@@ -88,13 +88,13 @@ python -m pytest -q
 
 ## Reliability evaluator
 
-The evaluator replays the committed response corpus through the real verifier and gateway in-process. No provider is contacted.
+The evaluator replays the committed response corpus through the real verifier and gateway in-process. No provider is contacted. It checks structural response behavior and corpus coverage; it is not a guarantee of semantic output quality.
 
 ```powershell
 python tests/corpus_eval.py
 ```
 
-Exit codes: `0` (pass), `1` (failures/regressions), `2` (configuration or I/O error).
+Exit codes: `0` (all cases pass; no regressions; baseline present or explicitly allowed), `1` (case failures, regressions, or strict baseline drift), `2` (configuration, I/O, or invalid-baseline error).
 
 ## Contributing
 

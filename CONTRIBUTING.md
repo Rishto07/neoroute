@@ -56,6 +56,13 @@ Exit codes:
 
 Useful options: `--strict-baseline`, `--allow-missing-baseline`, `--write-baseline`, `--json-out -`.
 
+## When checks fail
+
+- Read the failing test or lint message before editing.
+- Fix the code or documentation that caused the failure, then rerun the same command.
+- For `ruff`, address findings in files you changed. Do not reformat unrelated files.
+- If a command cannot be run in your environment, state that clearly instead of claiming it passed.
+
 ## Branch and pull request workflow
 
 1. Create a branch from `main`: `git checkout -b feat/your-change`
@@ -70,4 +77,6 @@ Useful options: `--strict-baseline`, `--allow-missing-baseline`, `--write-baseli
 
 - Do not commit `.env`, real API keys, or provider secrets.
 - Do not edit the evaluator implementation, test-corpus fixtures, or committed baseline unless the change is specifically intended and reviewed.
+- Before committing, run `git status` and `git diff --check`, and review `git diff`.
+- Do not stage `.env`, credentials, corpus fixtures, or baseline changes unless that change is deliberate and reviewed.
 - Prefer documentation-only changes for onboarding improvements.
