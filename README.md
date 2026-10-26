@@ -96,13 +96,45 @@ python tests/corpus_eval.py
 
 Exit codes: `0` (all cases pass; no regressions; baseline present or explicitly allowed), `1` (case failures, regressions, or strict baseline drift), `2` (configuration, I/O, or invalid-baseline error).
 
+## Dashboard and saved reports
+
+Start the server, then open `http://127.0.0.1:8000/` or `http://127.0.0.1:8000/ui/`. The dashboard can run the committed corpus evaluation in-process or load the last saved report.
+
+Saved report workflow:
+
+```powershell
+python tests/corpus_eval.py
+```
+
+This writes `reports/response_eval.json` by default. The report directory is git-ignored. You can also choose a path or print to stdout:
+
+```powershell
+python tests/corpus_eval.py --json-out reports/my-report.json
+python tests/corpus_eval.py --json-out -
+```
+
+The dashboard and API use the same saved report:
+
+- `GET /api/eval/report` returns the saved JSON report, or `404` when no report exists.
+- `POST /api/eval/run` runs the evaluator, saves `reports/response_eval.json`, and returns the report. It returns `500` if evaluation fails and `504` if it times out.
+
+## API endpoints
+
+- `GET /` redirects to `/ui/`.
+- `GET /health` returns `{"status":"ok","configured_providers":[...],"streaming":false}`. It returns `503` when configuration is invalid.
+- `POST /v1/chat/completions` accepts the OpenAI-compatible request shape used throughout this README. It returns the upstream response bytes, status, and `Content-Type` after validation. Common errors include `422` for invalid request or capability routing failures, `501` for `stream=true`, and `502` when all eligible providers fail.
+- `GET /api/eval/report` returns the saved evaluation report or `404`.
+- `POST /api/eval/run` runs the evaluator and returns its report.
+- `GET /ui/...` serves the dashboard static files.
+
 ## Contributing
 
 See `CONTRIBUTING.md` for setup, tests, lint, evaluator, and pull request workflow.
+
 ## Deliberate MVP limitations
 
 - Streaming is explicitly rejected (`stream=true` returns 501); it is better to state this than silently corrupt SSE/tool-call streams.
-- No dashboard, automatic quality scoring, quota discovery, or broad protocol translation yet.
+- No automatic quality scoring beyond structural response checks, quota discovery, or broad protocol translation yet. The dashboard is local-only and has no authentication.
 - This MVP is for local development; add authentication, rate limiting, hardened SSRF controls, secret management, and operational monitoring before exposing it to a network.
 
 ## Next milestones
@@ -131,5 +163,5 @@ Ignored paths: `.env` and `.env.*` (except `.env.example`), `.venv/`, `__pycache
 
 ## Continuous integration
 
-`.github/workflows/ci.yml` runs `pip install -e ".[dev]"` followed by `pytest -q` on Python 3.11–3.14 for every push and pull request. The workflow needs no secrets.
+`.github/workflows/ci.yml` runs `pip install -e ".[dev]"` followed by `python -m pytest -q` on Python 3.11–3.14 for every push and pull request. The workflow needs no secrets.
 
