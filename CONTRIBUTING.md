@@ -31,6 +31,34 @@ uvicorn neoroute.main:app --reload
 
 Use `model: "auto"` for configured provider order, or a configured provider name to prefer that provider.
 
+## Dashboard and saved reports
+
+After starting the server:
+
+- Open `http://127.0.0.1:8000/` or `http://127.0.0.1:8000/ui/`.
+- Use **Run evaluation** to execute the committed corpus and save `reports/response_eval.json`.
+- Use **Load saved report** to view an existing report.
+
+From the command line:
+
+```powershell
+python tests/corpus_eval.py
+python tests/corpus_eval.py --json-out reports/my-report.json
+python tests/corpus_eval.py --json-out -
+```
+
+The report directory is git-ignored. Do not commit generated reports.
+
+## API smoke check
+
+With the server running:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+```
+
+The chat endpoint requires a configured provider and usually a real or mocked upstream. Do not put real API keys in commands, logs, issues, or pull requests.
+
 ## Tests and lint
 
 ```powershell
