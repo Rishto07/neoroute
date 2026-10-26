@@ -57,7 +57,7 @@ from neoroute.attempts import AttemptRecord, ErrorCategory, Outcome
 from neoroute.gateway import forward_chat
 from neoroute.response_contract import ResponseFailureReason, check_response
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 RUNNER_NAME = "neoroute-response-eval"
 RUNNER_VERSION = 1
 
@@ -125,6 +125,9 @@ class BaselineComparison:
     kind_changes: tuple[str, ...]
     newly_failing: tuple[str, ...]
     newly_passing: tuple[str, ...]
+    signature_changes: tuple[str, ...]
+    signature_details: tuple[dict[str, Any], ...]
+    category_deltas: dict[str, dict[str, int]]
 
     def as_report(self) -> dict[str, Any]:
         return {
@@ -135,6 +138,9 @@ class BaselineComparison:
             "kind_changes": list(self.kind_changes),
             "newly_failing": list(self.newly_failing),
             "newly_passing": list(self.newly_passing),
+            "signature_changes": list(self.signature_changes),
+            "signature_details": [dict(item) for item in self.signature_details],
+            "category_deltas": self.category_deltas,
         }
 
 
@@ -535,6 +541,73 @@ def _require_object(value: Any, label: str, path: Path) -> dict[str, Any]:
     return value
 
 
+def _validate_signature(
+    signature: Any, kind: str, label: str, path: Path
+) -> None:
+    if not isinstance(signature, dict) or not signature:
+        raise EvalError(
+            f"invalid baseline {path}: {label}.signature must be a "
+            "non-empty JSON object"
+        )
+    if kind == "verify":
+        _reject_keys(signature, frozenset({"ok", "reason"}), f"{label}.signature", path)
+        if not isinstance(signature["ok"], bool):
+            raise EvalError(
+                f"invalid baseline {path}: {label}.signature.ok must be a boolean"
+            )
+        reason = signature["reason"]
+        if reason is not None and not isinstance(reason, str):
+            raise EvalError(
+                f"invalid baseline {path}: {label}.signature.reason must be "
+                "a string or null"
+            )
+    else:
+        _reject_keys(
+            signature,
+            frozenset({"outcome", "status_code", "attempts"}),
+            f"{label}.signature",
+            path,
+        )
+        outcome = signature["outcome"]
+        if outcome not in ("success", "error"):
+            raise EvalError(
+                f"invalid baseline {path}: {label}.signature.outcome must be "
+                "'success' or 'error'"
+            )
+        status_code = signature["status_code"]
+        if status_code is not None and not isinstance(status_code, int):
+            raise EvalError(
+                f"invalid baseline {path}: {label}.signature.status_code must be "
+                "an integer or null"
+            )
+        attempts = signature["attempts"]
+        if not isinstance(attempts, list):
+            raise EvalError(
+                f"invalid baseline {path}: {label}.signature.attempts must be "
+                "an array"
+            )
+        for index, attempt in enumerate(attempts):
+            item_label = f"{label}.signature.attempts[{index}]"
+            if not isinstance(attempt, dict):
+                raise EvalError(
+                    f"invalid baseline {path}: {item_label} must be a JSON object"
+                )
+            _reject_keys(
+                attempt, frozenset({"outcome", "error_category"}), item_label, path
+            )
+            if attempt["outcome"] not in ("success", "failure", "timeout"):
+                raise EvalError(
+                    f"invalid baseline {path}: {item_label}.outcome must be one "
+                    "of ['failure', 'success', 'timeout']"
+                )
+            category = attempt["error_category"]
+            if category is not None and not isinstance(category, str):
+                raise EvalError(
+                    f"invalid baseline {path}: {item_label}.error_category must "
+                    "be a string or null"
+                )
+
+
 def load_baseline(path: Path) -> Baseline | None:
     """Load and strictly validate a baseline, or return None when absent."""
     if not path.exists():
@@ -601,7 +674,7 @@ def load_baseline(path: Path) -> Baseline | None:
         label = f"cases[{index}]"
         item = _require_object(raw_case, label, path)
         _reject_keys(
-            item, frozenset({"id", "kind", "passed"}), label, path
+            item, frozenset({"id", "kind", "passed", "signature"}), label, path
         )
         case_id = item["id"]
         if not isinstance(case_id, str) or not case_id.strip():
@@ -620,11 +693,17 @@ def load_baseline(path: Path) -> Baseline | None:
             raise EvalError(
                 f"invalid baseline {path}: {label}.passed must be a boolean"
             )
+        signature = item["signature"]
+        _validate_signature(signature, kind, label, path)
         if case_id in cases:
             raise EvalError(
                 f"invalid baseline {path}: duplicate case id {case_id!r}"
             )
-        cases[case_id] = {"kind": kind, "passed": passed}
+        cases[case_id] = {
+            "kind": kind,
+            "passed": passed,
+            "signature": signature,
+        }
 
     if len(cases) != case_count:
         raise EvalError(
@@ -633,6 +712,79 @@ def load_baseline(path: Path) -> Baseline | None:
         )
 
     return Baseline(fingerprint=fingerprint, cases=cases)
+
+
+def _case_signature(result: CaseResult) -> dict[str, Any]:
+    """Compact, payload-free signature of an evaluated case's actual result."""
+    if result.kind == "verify":
+        return {
+            "ok": result.actual["ok"],
+            "reason": result.actual["reason"],
+        }
+    return {
+        "outcome": result.actual["outcome"],
+        "status_code": result.actual["status_code"],
+        "attempts": [
+            {
+                "outcome": attempt["outcome"],
+                "error_category": attempt["error_category"],
+            }
+            for attempt in result.actual.get("attempts", [])
+        ],
+    }
+
+
+def _changed_signature_fields(
+    expected: dict[str, Any] | None, actual: dict[str, Any] | None
+) -> list[str]:
+    if expected is None or actual is None:
+        return sorted(set(expected or {}) | set(actual or {}))
+    return sorted(
+        key
+        for key in set(expected) | set(actual)
+        if expected.get(key) != actual.get(key)
+    )
+
+
+def _count_verify_reasons(signature: dict[str, Any] | None) -> dict[str, int]:
+    if not signature:
+        return {}
+    reason = signature.get("reason")
+    return {reason: 1} if reason is not None else {}
+
+
+def _count_gateway_categories(signature: dict[str, Any] | None) -> dict[str, int]:
+    if not signature:
+        return {}
+    counts: dict[str, int] = {}
+    for attempt in signature.get("attempts", []):
+        category = attempt.get("error_category")
+        if category is not None:
+            counts[category] = counts.get(category, 0) + 1
+    return counts
+
+
+def _count_gateway_outcomes(signature: dict[str, Any] | None) -> dict[str, int]:
+    if not signature:
+        return {}
+    counts: dict[str, int] = {}
+    for attempt in signature.get("attempts", []):
+        outcome = attempt.get("outcome")
+        if outcome is not None:
+            counts[outcome] = counts.get(outcome, 0) + 1
+    return counts
+
+
+def _subtract_counts(
+    left: dict[str, int], right: dict[str, int]
+) -> dict[str, int]:
+    keys = sorted(set(left) | set(right))
+    result: dict[str, int] = {}
+    for key in keys:
+        delta = left.get(key, 0) - right.get(key, 0)
+        if delta:
+            result[key] = delta
+    return result
 
 
 def compare_baseline(
@@ -649,6 +801,13 @@ def compare_baseline(
             kind_changes=(),
             newly_failing=(),
             newly_passing=(),
+            signature_changes=(),
+            signature_details=(),
+            category_deltas={
+                "response_failure_reasons": {},
+                "error_categories": {},
+                "attempt_outcomes": {},
+            },
         )
 
     current = {result.id: result for result in results}
@@ -673,6 +832,74 @@ def compare_baseline(
         and current[case_id].passed
     )
 
+    signature_changes: list[str] = []
+    signature_details: list[dict[str, Any]] = []
+    baseline_reason_counts: dict[str, int] = {}
+    current_reason_counts: dict[str, int] = {}
+    baseline_category_counts: dict[str, int] = {}
+    current_category_counts: dict[str, int] = {}
+    baseline_outcome_counts: dict[str, int] = {}
+    current_outcome_counts: dict[str, int] = {}
+
+    for case_id, entry in baseline.cases.items():
+        if case_id not in current:
+            continue
+        result = current[case_id]
+        if entry["kind"] != result.kind:
+            continue
+        baseline_signature = entry.get("signature")
+        current_signature = _case_signature(result)
+        if baseline_signature != current_signature:
+            signature_changes.append(case_id)
+            signature_details.append(
+                {
+                    "id": case_id,
+                    "expected": baseline_signature,
+                    "actual": current_signature,
+                    "changed_fields": _changed_signature_fields(
+                        baseline_signature, current_signature
+                    ),
+                }
+            )
+        if result.kind == "verify":
+            for key, value in _count_verify_reasons(baseline_signature).items():
+                baseline_reason_counts[key] = (
+                    baseline_reason_counts.get(key, 0) + value
+                )
+            for key, value in _count_verify_reasons(current_signature).items():
+                current_reason_counts[key] = (
+                    current_reason_counts.get(key, 0) + value
+                )
+        else:
+            for key, value in _count_gateway_categories(baseline_signature).items():
+                baseline_category_counts[key] = (
+                    baseline_category_counts.get(key, 0) + value
+                )
+            for key, value in _count_gateway_categories(current_signature).items():
+                current_category_counts[key] = (
+                    current_category_counts.get(key, 0) + value
+                )
+            for key, value in _count_gateway_outcomes(baseline_signature).items():
+                baseline_outcome_counts[key] = (
+                    baseline_outcome_counts.get(key, 0) + value
+                )
+            for key, value in _count_gateway_outcomes(current_signature).items():
+                current_outcome_counts[key] = (
+                    current_outcome_counts.get(key, 0) + value
+                )
+
+    category_deltas = {
+        "response_failure_reasons": _subtract_counts(
+            current_reason_counts, baseline_reason_counts
+        ),
+        "error_categories": _subtract_counts(
+            current_category_counts, baseline_category_counts
+        ),
+        "attempt_outcomes": _subtract_counts(
+            current_outcome_counts, baseline_outcome_counts
+        ),
+    }
+
     return BaselineComparison(
         present=True,
         fingerprint_match=baseline.fingerprint == fingerprint,
@@ -681,6 +908,9 @@ def compare_baseline(
         kind_changes=tuple(kind_changes),
         newly_failing=tuple(newly_failing),
         newly_passing=tuple(newly_passing),
+        signature_changes=tuple(sorted(signature_changes)),
+        signature_details=tuple(signature_details),
+        category_deltas=category_deltas,
     )
 
 
@@ -736,7 +966,12 @@ def build_baseline_document(
             "fingerprint": fingerprint,
         },
         "cases": [
-            {"id": result.id, "kind": result.kind, "passed": result.passed}
+            {
+                "id": result.id,
+                "kind": result.kind,
+                "passed": result.passed,
+                "signature": _case_signature(result),
+            }
             for result in sorted(results, key=lambda item: item.id)
         ],
     }
@@ -756,6 +991,7 @@ def determine_exit_code(
         comparison.new_cases
         or comparison.removed_cases
         or comparison.kind_changes
+        or comparison.signature_changes
     ):
         return EXIT_EVALUATION_FAILED
     return EXIT_OK
