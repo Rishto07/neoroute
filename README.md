@@ -83,9 +83,22 @@ When a response passes validation, Neoroute forwards the original upstream body 
 ## Tests
 
 ```powershell
-pytest -q
+python -m pytest -q
 ```
 
+## Reliability evaluator
+
+The evaluator replays the committed response corpus through the real verifier and gateway in-process. No provider is contacted.
+
+```powershell
+python tests/corpus_eval.py
+```
+
+Exit codes: `0` (pass), `1` (failures/regressions), `2` (configuration or I/O error).
+
+## Contributing
+
+See `CONTRIBUTING.md` for setup, tests, lint, evaluator, and pull request workflow.
 ## Deliberate MVP limitations
 
 - Streaming is explicitly rejected (`stream=true` returns 501); it is better to state this than silently corrupt SSE/tool-call streams.
