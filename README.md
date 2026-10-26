@@ -80,6 +80,16 @@ A malformed `2xx` response is recorded as a failed attempt with its original sta
 
 When a response passes validation, Neoroute forwards the original upstream body bytes, HTTP status, and `Content-Type` unchanged. Streaming remains unsupported: `stream=true` returns `501`.
 
+## Anthropic-compatible endpoint (Claude Code status)
+
+`POST /v1/messages` accepts the Anthropic Messages API shape (system, messages, tools, tool_choice, stop_sequences), translates it to the internal OpenAI-compatible request, and forwards it through the same gateway - so fallback, bounded retries, attempt records, and response verification apply unchanged. Responses use the Anthropic message format with the `X-Neoroute-*` trace headers.
+
+Honest status - what is verified versus what is not:
+
+- Non-streaming `/v1/messages` requests work end-to-end and are covered by deterministic route tests (mocked providers; no live Anthropic credentials were used).
+- `stream: true` is rejected with `400`. The gateway has no SSE passthrough, and **Claude Code requires SSE streaming, so real Claude Code is not yet supported end to end.**
+- Image content blocks, extended-thinking parameters, and `POST /v1/messages/count_tokens` are not implemented; unsupported content is rejected explicitly rather than silently dropped.
+
 ## Tests
 
 ```powershell

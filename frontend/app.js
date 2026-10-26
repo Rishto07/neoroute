@@ -436,6 +436,13 @@ function renderReport(report) {
   setBanner(`Evaluation complete: ${report.summary?.passed ?? 0}/${report.summary?.total ?? 0} cases passed.`, "success");
 }
 
+function detailMessage(payload, fallback) {
+  const detail = payload.detail ?? payload.message;
+  if (typeof detail === "string") return detail;
+  if (detail && typeof detail === "object") return detail.message || JSON.stringify(detail);
+  return fallback;
+}
+
 async function runEvaluation() {
   setBanner("Running evaluation...", "info");
   showState("loading");
@@ -444,7 +451,7 @@ async function runEvaluation() {
   try {
     const response = await fetch("/api/eval/run", { method: "POST" });
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || payload.message || "Evaluation request failed");
+    if (!response.ok) throw new Error(detailMessage(payload, "Evaluation request failed"));
     renderReport(payload);
   } catch (error) {
     showState("error");
@@ -464,7 +471,7 @@ async function loadReport() {
   try {
     const response = await fetch("/api/eval/report");
     const payload = await response.json();
-    if (!response.ok) throw new Error(payload.detail || payload.message || "No saved report found");
+    if (!response.ok) throw new Error(detailMessage(payload, "No saved report found"));
     renderReport(payload);
   } catch (error) {
     showState("error");

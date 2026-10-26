@@ -4,10 +4,17 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Response
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
+from neoroute.anthropic import (
+    AnthropicRequestError,
+    anthropic_response_body,
+    error_response,
+    gateway_error_message,
+    to_chat_request,
+)
 from neoroute.config import get_settings
 from neoroute.gateway import attach_trace_headers, forward_chat
 from neoroute.schemas import ChatCompletionRequest
@@ -49,6 +56,47 @@ async def chat_completions(payload: ChatCompletionRequest):
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     result, elapsed = await forward_chat(payload, settings)
     response = Response(content=result.body, status_code=result.status_code, media_type=result.content_type.split(";")[0])
+    attach_trace_headers(response, result, elapsed)
+    return response
+
+
+@app.post("/v1/messages")
+async def anthropic_messages(request: Request):
+    """Anthropic Messages API surface (non-streaming translation).
+
+    Translates to the OpenAI-compatible request, forwards through the same
+    gateway (fallback, attempts, response contract), and returns the Anthropic
+    response shape. ``stream: true`` is rejected because there is no SSE
+    passthrough; real Claude Code requires SSE and is not yet supported.
+    """
+    try:
+        raw = await request.json()
+    except (ValueError, UnicodeDecodeError):
+        return error_response("Request body must be valid JSON.", 400)
+    if not isinstance(raw, dict):
+        return error_response("Request body must be a JSON object.", 400)
+
+    try:
+        chat_payload = to_chat_request(raw)
+    except AnthropicRequestError as exc:
+        return error_response(exc.message, exc.status, exc.type)
+
+    try:
+        settings = get_settings()
+    except ValueError as exc:
+        return error_response(str(exc), 503)
+
+    try:
+        result, elapsed = await forward_chat(chat_payload, settings)
+    except HTTPException as exc:
+        return error_response(gateway_error_message(exc.detail), exc.status_code)
+
+    try:
+        body = anthropic_response_body(result.body, chat_payload.model)
+    except ValueError as exc:
+        return error_response(str(exc), 502)
+
+    response = JSONResponse(content=body)
     attach_trace_headers(response, result, elapsed)
     return response
 
