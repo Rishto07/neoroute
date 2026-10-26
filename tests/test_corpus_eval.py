@@ -1093,3 +1093,43 @@ def test_corrupt_baseline_is_not_replaced_by_write_baseline(tmp_path, capsys):
     assert "Traceback" not in captured.err
     assert baseline.read_bytes() == before
     assert not (tmp_path / "report.json").exists()
+
+
+# --- Malformed baseline input handling -------------------------------------
+
+
+def test_invalid_utf8_baseline_exits_2(tmp_path, capsys):
+    baseline = tmp_path / "baseline.json"
+    baseline.write_bytes(b"{\xff}")
+    before = baseline.read_bytes()
+
+    exit_code, report_path = _run(tmp_path, baseline=baseline)
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert "Traceback" not in captured.err
+    assert "cannot read baseline" in captured.err or "invalid baseline" in captured.err
+    assert not report_path.exists()
+    assert baseline.read_bytes() == before
+
+
+def test_over_limit_integer_baseline_exits_2(tmp_path, capsys):
+    baseline = tmp_path / "baseline.json"
+    baseline.write_text(
+        '{"schema_version": '
+        + ("9" * 5000)
+        + ', "corpus": {"case_count": 0, "fingerprint": "sha256:'
+        + ("0" * 64)
+        + '"}, "cases": []}',
+        encoding="utf-8",
+    )
+    before = baseline.read_bytes()
+
+    exit_code, report_path = _run(tmp_path, baseline=baseline)
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert "Traceback" not in captured.err
+    assert "invalid baseline" in captured.err
+    assert not report_path.exists()
+    assert baseline.read_bytes() == before

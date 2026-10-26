@@ -491,7 +491,7 @@ def corpus_fingerprint(cases: Sequence[Case]) -> str:
         try:
             raw = case.path.read_bytes()
             document = json.loads(raw.decode("utf-8"))
-        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
             raise EvalError(
                 f"cannot fingerprint fixture {case.path}: {exc}"
             ) from exc
@@ -541,13 +541,17 @@ def load_baseline(path: Path) -> Baseline | None:
         return None
     try:
         raw = path.read_text(encoding="utf-8")
-    except OSError as exc:
+    except (OSError, UnicodeDecodeError) as exc:
         raise EvalError(f"cannot read baseline {path}: {exc}") from exc
     try:
         document = json.loads(raw)
     except json.JSONDecodeError as exc:
         raise EvalError(
             f"invalid baseline {path}: not valid JSON ({exc.msg})"
+        ) from exc
+    except ValueError as exc:
+        raise EvalError(
+            f"invalid baseline {path}: not valid JSON ({exc})"
         ) from exc
 
     root = _require_object(document, "root", path)
