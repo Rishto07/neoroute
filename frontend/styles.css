@@ -1,0 +1,167 @@
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --border: #d9dee5;
+  --text: #17202a;
+  --muted: #5b6775;
+  --primary: #1f4e79;
+  --primary-dark: #163a5a;
+  --good: #1f7a4d;
+  --bad: #a6322f;
+  --warn: #8a6d1f;
+  --shadow: 0 10px 30px rgba(23, 32, 42, 0.08);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  padding: 28px 32px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+h1 { margin: 0; font-size: 1.9rem; }
+h2 { margin: 0 0 6px; font-size: 1.15rem; }
+h3 { margin: 0 0 8px; font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.subtitle { margin: 6px 0 0; color: var(--muted); max-width: 760px; }
+
+.actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.button {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+.button.primary { background: var(--primary); color: #fff; border-color: var(--primary); }
+.button.primary:hover { background: var(--primary-dark); }
+.button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+main { max-width: 1280px; margin: 0 auto; padding: 24px; }
+.banner {
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  margin-bottom: 18px;
+}
+.banner.info { border-left: 4px solid var(--primary); }
+.banner.success { border-left: 4px solid var(--good); }
+.banner.error { border-left: 4px solid var(--bad); color: var(--bad); }
+
+.state {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 32px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+.state.hidden { display: none; }
+.spinner {
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 12px;
+  border: 3px solid #d9dee5;
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.hidden { display: none !important; }
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+}
+.label { display: block; color: var(--muted); font-size: 0.82rem; margin-bottom: 8px; }
+.card strong { font-size: 1.8rem; }
+.good { color: var(--good); }
+.bad { color: var(--bad); }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.panel-header { margin-bottom: 12px; }
+.muted { color: var(--muted); margin: 0; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+th, td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: #f0f4f8; }
+tbody tr.selected { background: #e7eef5; }
+.status-pass { color: var(--good); font-weight: 600; }
+.status-fail { color: var(--bad); font-weight: 600; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  background: #f7f9fb;
+}
+.chip.good { border-color: #b7d8c5; background: #edf7f1; color: var(--good); }
+.chip.bad { border-color: #e2b5b4; background: #fbefee; color: var(--bad); }
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+.list { margin: 0; padding-left: 18px; }
+.list li { margin-bottom: 6px; }
+pre {
+  margin: 0;
+  padding: 12px;
+  background: #f7f9fb;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: auto;
+  max-height: 320px;
+  font-size: 0.8rem;
+}
+
+@media (max-width: 720px) {
+  .topbar { flex-direction: column; align-items: flex-start; }
+  main { padding: 16px; }
+}

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neoroute Reliability Dashboard</title>
+  <link rel="stylesheet" href="/ui/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Neoroute</p>
+      <h1>Reliability evaluation dashboard</h1>
+      <p class="subtitle">Replay the committed response corpus through the real verifier and gateway. No provider is contacted.</p>
+    </div>
+    <div class="actions">
+      <button id="loadButton" class="button secondary">Load saved report</button>
+      <button id="runButton" class="button primary">Run evaluation</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="statusBanner" class="banner info" role="status" aria-live="polite">
+      Ready. Run the evaluation or load a saved report.
+    </section>
+
+    <section id="loadingState" class="state hidden" aria-hidden="true">
+      <div class="spinner" aria-hidden="true"></div>
+      <p>Running evaluation...</p>
+    </section>
+
+    <section id="emptyState" class="state">
+      <h2>No evaluation loaded</h2>
+      <p>Run the committed corpus evaluation to see pass/fail counts, case outcomes, and regression details.</p>
+    </section>
+
+    <section id="errorState" class="state hidden" aria-hidden="true">
+      <h2>Evaluation failed</h2>
+      <p id="errorMessage"></p>
+    </section>
+
+    <section id="dashboard" class="hidden">
+      <section class="summary-grid" aria-label="Evaluation summary">
+        <article class="card">
+          <span class="label">Total cases</span>
+          <strong id="totalCases">0</strong>
+        </article>
+        <article class="card">
+          <span class="label">Passed</span>
+          <strong id="passedCases" class="good">0</strong>
+        </article>
+        <article class="card">
+          <span class="label">Failed</span>
+          <strong id="failedCases" class="bad">0</strong>
+        </article>
+        <article class="card">
+          <span class="label">Baseline</span>
+          <strong id="baselineStatus">unknown</strong>
+        </article>
+        <article class="card">
+          <span class="label">Gateway terminals</span>
+          <strong id="gatewayTerminals">0 / 0</strong>
+        </article>
+        <article class="card">
+          <span class="label">Fallback successes</span>
+          <strong id="fallbackSuccesses">0</strong>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Baseline comparison</h2>
+          <p id="baselineDetail" class="muted">No baseline comparison available.</p>
+        </div>
+        <div id="baselineChanges" class="chip-row"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Evaluation results</h2>
+          <p class="muted">Select a case to inspect expected and actual outcomes.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Case ID</th>
+                <th>Kind</th>
+                <th>Expected</th>
+                <th>Actual</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Regression details</h2>
+          <p id="selectedCaseLabel" class="muted">Select a result row to inspect it.</p>
+        </div>
+        <div id="detailContent" class="detail-grid">
+          <div>
+            <h3>Changed fields</h3>
+            <ul id="changedFields" class="list"></ul>
+          </div>
+          <div>
+            <h3>Failures</h3>
+            <ul id="failureList" class="list"></ul>
+          </div>
+          <div>
+            <h3>Expected</h3>
+            <pre id="expectedJson"></pre>
+          </div>
+          <div>
+            <h3>Actual</h3>
+            <pre id="actualJson"></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Coverage</h2>
+          <p class="muted">Coverage declared by the committed corpus.</p>
+        </div>
+        <div id="coverageContent" class="chip-row"></div>
+      </section>
+    </section>
+  </main>
+
+  <script src="/ui/app.js"></script>
+</body>
+</html>
