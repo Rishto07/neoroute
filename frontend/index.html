@@ -19,6 +19,13 @@
     </div>
   </header>
 
+  <nav class="tabs" role="tablist" aria-label="Dashboard sections">
+    <button class="tab active" data-tab="overview" role="tab" aria-selected="true" aria-controls="panel-overview">Overview</button>
+    <button class="tab" data-tab="cases" role="tab" aria-selected="false" aria-controls="panel-cases">Test cases</button>
+    <button class="tab" data-tab="regressions" role="tab" aria-selected="false" aria-controls="panel-regressions">Regressions</button>
+    <button class="tab" data-tab="gateway" role="tab" aria-selected="false" aria-controls="panel-gateway">Gateway</button>
+  </nav>
+
   <main>
     <section id="statusBanner" class="banner info" role="status" aria-live="polite">
       Ready. Run the evaluation or load a saved report.
@@ -40,93 +47,135 @@
     </section>
 
     <section id="dashboard" class="hidden">
-      <section class="summary-grid" aria-label="Evaluation summary">
-        <article class="card">
-          <span class="label">Total cases</span>
-          <strong id="totalCases">0</strong>
-        </article>
-        <article class="card">
-          <span class="label">Passed</span>
-          <strong id="passedCases" class="good">0</strong>
-        </article>
-        <article class="card">
-          <span class="label">Failed</span>
-          <strong id="failedCases" class="bad">0</strong>
-        </article>
-        <article class="card">
-          <span class="label">Baseline</span>
-          <strong id="baselineStatus">unknown</strong>
-        </article>
-        <article class="card">
-          <span class="label">Gateway terminals</span>
-          <strong id="gatewayTerminals">0 / 0</strong>
-        </article>
-        <article class="card">
-          <span class="label">Fallback successes</span>
-          <strong id="fallbackSuccesses">0</strong>
-        </article>
+      <section id="panel-overview" class="tab-panel" role="tabpanel">
+        <div class="summary-grid" aria-label="Evaluation summary">
+          <article class="card"><span class="label">Total cases</span><strong id="totalCases">0</strong></article>
+          <article class="card"><span class="label">Passed</span><strong id="passedCases" class="good">0</strong></article>
+          <article class="card"><span class="label">Failed</span><strong id="failedCases" class="bad">0</strong></article>
+          <article class="card"><span class="label">Baseline</span><strong id="baselineStatus">unknown</strong></article>
+          <article class="card"><span class="label">Gateway terminals</span><strong id="gatewayTerminals">0 / 0</strong></article>
+          <article class="card"><span class="label">Fallback successes</span><strong id="fallbackSuccesses">0</strong></article>
+        </div>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Baseline comparison</h2><p id="baselineDetail" class="muted"></p></div>
+          <div id="baselineChanges" class="chip-row"></div>
+          <div id="categoryDeltas" class="chip-row" style="margin-top:8px;"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Run details</h2><p class="muted">Metadata from the loaded report.</p></div>
+          <dl id="runDetails" class="kv-grid"></dl>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header"><h2>Coverage</h2><p class="muted">Coverage declared by the committed corpus.</p></div>
+          <div id="coverageContent" class="chip-row"></div>
+        </section>
       </section>
 
-      <section class="panel">
-        <div class="panel-header">
-          <h2>Baseline comparison</h2>
-          <p id="baselineDetail" class="muted">No baseline comparison available.</p>
+      <section id="panel-cases" class="tab-panel hidden" role="tabpanel" aria-hidden="true">
+        <div class="toolbar">
+          <input id="caseSearch" type="search" placeholder="Search case ID, kind, status..." aria-label="Search cases" />
+          <select id="kindFilter" aria-label="Filter by kind">
+            <option value="all">All kinds</option>
+            <option value="verify">Verify</option>
+            <option value="gateway">Gateway</option>
+          </select>
+          <select id="statusFilter" aria-label="Filter by status">
+            <option value="all">All statuses</option>
+            <option value="pass">Passed</option>
+            <option value="fail">Failed</option>
+          </select>
         </div>
-        <div id="baselineChanges" class="chip-row"></div>
+        <div class="panel">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Case ID</th>
+                  <th>Kind</th>
+                  <th>Expected</th>
+                  <th>Actual</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="resultsBody"></tbody>
+            </table>
+          </div>
+        </div>
+        <section class="panel">
+          <div class="panel-header">
+            <h2>Case detail</h2>
+            <p id="selectedCaseLabel" class="muted">Select a result row to inspect it.</p>
+          </div>
+          <div class="detail-grid">
+            <div>
+              <h3>Changed fields</h3>
+              <ul id="changedFields" class="list"></ul>
+            </div>
+            <div>
+              <h3>Failures</h3>
+              <ul id="failureList" class="list"></ul>
+            </div>
+            <div>
+              <h3>Expected</h3>
+              <pre id="expectedJson"></pre>
+            </div>
+            <div>
+              <h3>Actual</h3>
+              <pre id="actualJson"></pre>
+            </div>
+          </div>
+        </section>
       </section>
 
-      <section class="panel">
-        <div class="panel-header">
-          <h2>Evaluation results</h2>
-          <p class="muted">Select a case to inspect expected and actual outcomes.</p>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Case ID</th>
-                <th>Kind</th>
-                <th>Expected</th>
-                <th>Actual</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody id="resultsBody"></tbody>
-          </table>
-        </div>
+      <section id="panel-regressions" class="tab-panel hidden" role="tabpanel" aria-hidden="true">
+        <section class="panel">
+          <div class="panel-header"><h2>Signature changes</h2><p class="muted">Cases whose failure signature changed between baseline and current run.</p></div>
+          <div id="signatureChanges" class="list"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-header"><h2>Newly failing</h2><p class="muted">Passed in baseline, failing now.</p></div>
+          <div id="newlyFailing" class="chip-row"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-header"><h2>Newly passing</h2><p class="muted">Failing in baseline, passing now.</p></div>
+          <div id="newlyPassing" class="chip-row"></div>
+        </section>
+        <section class="panel">
+          <div class="panel-header"><h2>Baseline drift</h2><p class="muted">Added, removed, or kind-changed case IDs.</p></div>
+          <div id="driftChanges" class="chip-row"></div>
+        </section>
       </section>
 
-      <section class="panel">
-        <div class="panel-header">
-          <h2>Regression details</h2>
-          <p id="selectedCaseLabel" class="muted">Select a result row to inspect it.</p>
+      <section id="panel-gateway" class="tab-panel hidden" role="tabpanel" aria-hidden="true">
+        <div class="summary-grid">
+          <article class="card"><span class="label">Terminal success</span><strong id="gwSuccess">0</strong></article>
+          <article class="card"><span class="label">Terminal error</span><strong id="gwError">0</strong></article>
+          <article class="card"><span class="label">Fallback successes</span><strong id="gwFallback">0</strong></article>
+          <article class="card"><span class="label">Immediate successes</span><strong id="gwImmediate">0</strong></article>
+          <article class="card"><span class="label">Total attempts</span><strong id="gwAttempts">0</strong></article>
+          <article class="card"><span class="label">Fallback attempted</span><strong id="gwFallbackAttempted">0</strong></article>
         </div>
-        <div id="detailContent" class="detail-grid">
-          <div>
-            <h3>Changed fields</h3>
-            <ul id="changedFields" class="list"></ul>
+        <section class="panel">
+          <div class="panel-header"><h2>Selected case attempts</h2><p id="gatewayCaseLabel" class="muted">Select a gateway case from Test cases.</p></div>
+          <div class="table-wrap">
+            <table class="attempt-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Provider</th>
+                  <th>Outcome</th>
+                  <th>Status</th>
+                  <th>Category</th>
+                  <th>Fallback</th>
+                </tr>
+              </thead>
+              <tbody id="attemptBody"></tbody>
+            </table>
           </div>
-          <div>
-            <h3>Failures</h3>
-            <ul id="failureList" class="list"></ul>
-          </div>
-          <div>
-            <h3>Expected</h3>
-            <pre id="expectedJson"></pre>
-          </div>
-          <div>
-            <h3>Actual</h3>
-            <pre id="actualJson"></pre>
-          </div>
-        </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-header">
-          <h2>Coverage</h2>
-          <p class="muted">Coverage declared by the committed corpus.</p>
-        </div>
-        <div id="coverageContent" class="chip-row"></div>
+        </section>
       </section>
     </section>
   </main>
