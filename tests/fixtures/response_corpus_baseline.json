@@ -1,0 +1,259 @@
+{
+  "cases": [
+    {
+      "id": "gateway.error.all_malformed_502",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.error.client_error_stops",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.error.malformed_then_400_stop",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.error.max_attempts_bounds",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.error.redirect_stops",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.bytes_preserved",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.connection_then_valid",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.invalid_json_then_valid",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.malformed_then_valid",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.missing_api_key_then_valid",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.rate_limited_then_valid",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.server_error_then_valid",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.timeout_then_valid",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "gateway.success.tool_call_null_content",
+      "kind": "gateway",
+      "passed": true
+    },
+    {
+      "id": "json_mode.array_content",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.empty_string",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.non_null_content_with_tool_calls_invalid",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.non_null_valid_with_tool_calls",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.null_with_function_call",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.null_with_refusal",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.null_with_tool_calls",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.null_without_tool_call",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.object_content",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.scalar_content",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "json_mode.unparseable_string",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.choice_not_object",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.choices_not_list",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.content_not_string",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.empty_body",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.empty_choices",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.html_body",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.invalid_function_call",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.invalid_role",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.invalid_tool_calls",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.message_not_object",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.missing_choices",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.missing_content",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.missing_message",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.non_finite_number",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.non_utf8",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.null_top_level",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "malformed.top_level_array",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.full_metadata",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.legacy_function_call_null_content",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.minimal",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.multiple_choices",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.null_content_plain",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.surrounding_whitespace",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.tool_calls_null_content",
+      "kind": "verify",
+      "passed": true
+    },
+    {
+      "id": "valid.utf8_content",
+      "kind": "verify",
+      "passed": true
+    }
+  ],
+  "corpus": {
+    "case_count": 50,
+    "fingerprint": "sha256:d17a403e174763588ad24b0b8b30a8e1d9798e0fb7b21bd623d3c5290a3fe2db"
+  },
+  "schema_version": 1
+}
