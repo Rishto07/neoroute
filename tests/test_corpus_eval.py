@@ -1133,3 +1133,21 @@ def test_over_limit_integer_baseline_exits_2(tmp_path, capsys):
     assert "invalid baseline" in captured.err
     assert not report_path.exists()
     assert baseline.read_bytes() == before
+
+
+def test_invalid_utf8_corpus_fixture_exits_2(tmp_path, capsys):
+    corpus = _copy_corpus(tmp_path)
+    (corpus / "bad.json").write_bytes(b"{\xff}")
+
+    exit_code, report_path = _run(
+        tmp_path,
+        corpus=corpus,
+        baseline=tmp_path / "missing.json",
+        extra=("--allow-missing-baseline",),
+    )
+    captured = capsys.readouterr()
+
+    assert exit_code == 2
+    assert "cannot read fixture" in captured.err
+    assert "Traceback" not in captured.err
+    assert not report_path.exists()

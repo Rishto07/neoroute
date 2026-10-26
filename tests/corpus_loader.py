@@ -591,7 +591,7 @@ def load_cases(directory: Path = FIXTURE_DIR) -> list[Case]:
     for path in paths:
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError, RecursionError) as exc:
             raise FixtureError(f"{path}: cannot read fixture: {exc}") from exc
         case = validate_case(raw, path)
         previous = seen.get(case.id)
