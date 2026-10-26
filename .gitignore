@@ -12,3 +12,4 @@ _research/
 .coverage
 coverage.xml
 htmlcov/
+reports/
