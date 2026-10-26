@@ -127,7 +127,7 @@ def test_real_corpus_matches_versioned_baseline(tmp_path):
 
     assert exit_code == 0
     report = _read_report(report_path)
-    assert report["schema_version"] == 1
+    assert report["schema_version"] == 2
     assert report["runner"] == {
         "name": "neoroute-response-eval",
         "version": 1,
@@ -145,6 +145,13 @@ def test_real_corpus_matches_versioned_baseline(tmp_path):
         "kind_changes": [],
         "newly_failing": [],
         "newly_passing": [],
+        "signature_changes": [],
+        "signature_details": [],
+        "category_deltas": {
+            "response_failure_reasons": {},
+            "error_categories": {},
+            "attempt_outcomes": {},
+        },
     }
     assert report["result"] == {
         "ok": True,
@@ -361,6 +368,13 @@ def test_missing_baseline_is_allowed_explicitly(tmp_path):
         "kind_changes": [],
         "newly_failing": [],
         "newly_passing": [],
+        "signature_changes": [],
+        "signature_details": [],
+        "category_deltas": {
+            "response_failure_reasons": {},
+            "error_categories": {},
+            "attempt_outcomes": {},
+        },
     }
     assert report["result"] == {
         "ok": True,
@@ -384,7 +398,7 @@ def test_invalid_json_baseline_exits_2(tmp_path, capsys):
 
 
 def _corrupt_version(document: dict) -> None:
-    document["schema_version"] = 2
+    document["schema_version"] = 3
 
 
 def _corrupt_duplicate_id(document: dict) -> None:
@@ -633,7 +647,7 @@ def test_baseline_write_round_trip(tmp_path):
     assert not any(path.suffix == ".tmp" for path in tmp_path.iterdir())
 
     written = json.loads(baseline.read_text(encoding="utf-8"))
-    assert written["schema_version"] == 1
+    assert written["schema_version"] == 2
     assert written["corpus"]["case_count"] == 50
     assert len(written["cases"]) == 50
     assert [case["id"] for case in written["cases"]] == sorted(
@@ -784,6 +798,11 @@ def test_baseline_kind_change_is_drift_not_regression(tmp_path):
         case for case in document["cases"] if case["id"] == "valid.minimal"
     )
     entry["kind"] = "gateway"
+    entry["signature"] = {
+        "outcome": "success",
+        "status_code": 200,
+        "attempts": [],
+    }
     baseline = tmp_path / "baseline.json"
     baseline.write_text(json.dumps(document), encoding="utf-8")
 
@@ -807,6 +826,11 @@ def test_baseline_kind_change_fails_strict_mode(tmp_path):
         case for case in document["cases"] if case["id"] == "valid.minimal"
     )
     entry["kind"] = "gateway"
+    entry["signature"] = {
+        "outcome": "success",
+        "status_code": 200,
+        "attempts": [],
+    }
     baseline = tmp_path / "baseline.json"
     baseline.write_text(json.dumps(document), encoding="utf-8")
 
@@ -1093,6 +1117,35 @@ def test_corrupt_baseline_is_not_replaced_by_write_baseline(tmp_path, capsys):
     assert "Traceback" not in captured.err
     assert baseline.read_bytes() == before
     assert not (tmp_path / "report.json").exists()
+
+
+# --- Regression attribution -------------------------------------------------
+
+
+def test_verifier_signature_change_is_attributed(tmp_path):
+    corpus = _copy_corpus(tmp_path)
+    path = corpus / "valid.minimal.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["body"] = '{"choices":[]}'
+    document["expect"] = {"ok": False, "reason": "empty_choices"}
+    path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
+
+    exit_code, report_path = _run(tmp_path, corpus=corpus)
+    report = _read_report(report_path)
+
+    assert exit_code == 0
+    assert report["baseline"]["signature_changes"] == ["valid.minimal"]
+    detail = report["baseline"]["signature_details"][0]
+    assert detail["id"] == "valid.minimal"
+    assert detail["expected"] == {"ok": True, "reason": None}
+    assert detail["actual"] == {"ok": False, "reason": "empty_choices"}
+    assert "ok" in detail["changed_fields"]
+    assert "reason" in detail["changed_fields"]
+    assert report["baseline"]["category_deltas"]["response_failure_reasons"] == {
+        "empty_choices": 1
+    }
+    assert report["baseline"]["newly_failing"] == []
+    assert report["baseline"]["newly_passing"] == []
 
 
 # --- Malformed baseline input handling -------------------------------------
