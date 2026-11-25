@@ -39,6 +39,24 @@ Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/v1/chat/completions -C
 
 Use `model: "auto"` for configured order or a configured provider name to prefer that provider. Response headers include `X-Neoroute-Provider`, `X-Neoroute-Attempts`, and `X-Neoroute-Latency-Ms`.
 
+## Examples
+
+Two PowerShell examples to try against the running gateway.
+
+Simple chat completion:
+
+```powershell
+$body = @{ model = "auto"; messages = @(@{ role = "user"; content = "Say hello in one sentence." }) } | ConvertTo-Json -Depth 8
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/v1/chat/completions -ContentType "application/json" -Body $body
+```
+
+JSON mode (`response_format: {"type": "json_object"}`); the gateway structurally validates the parsed JSON before returning it, and a `json_schema` request is structurally validated against the schema:
+
+```powershell
+$body = @{ model = "primary"; response_format = @{ type = "json_object" }; messages = @(@{ role = "user"; content = "Return a JSON object with one key: greeting" }) } | ConvertTo-Json -Depth 8
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/v1/chat/completions -ContentType "application/json" -Body $body
+```
+
 ## Capability routing
 
 A provider may declare what its configured model supports. Capabilities are `vision`, `tools`, `json_mode`, `json_schema`, `audio_input`, and `audio_output`; each value is `supported`, `unsupported`, or `unknown`. Omitting a capability is the same as `unknown`. Declarations are operator-configured; Neoroute does not discover model capabilities automatically.
@@ -133,3 +151,6 @@ Ignored paths: `.env` and `.env.*` (except `.env.example`), `.venv/`, `__pycache
 
 `.github/workflows/ci.yml` runs `pip install -e ".[dev]"` followed by `pytest -q` on Python 3.11–3.14 for every push and pull request. The workflow needs no secrets.
 
+## License
+
+MIT — see [LICENSE](LICENSE).
