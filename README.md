@@ -50,7 +50,7 @@ $body = @{ model = "auto"; messages = @(@{ role = "user"; content = "Say hello i
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/v1/chat/completions -ContentType "application/json" -Body $body
 ```
 
-JSON mode (`response_format: {"type": "json_object"}`); the gateway structurally validates the parsed JSON before returning it, and a `json_schema` request is structurally validated against the schema:
+JSON mode (`response_format: {"type": "json_object"}`); the gateway structurally validates the parsed JSON before returning it. A `json_schema` request receives structural validation only; JSON Schema conformance is not enforced.
 
 ```powershell
 $body = @{ model = "primary"; response_format = @{ type = "json_object" }; messages = @(@{ role = "user"; content = "Return a JSON object with one key: greeting" }) } | ConvertTo-Json -Depth 8
